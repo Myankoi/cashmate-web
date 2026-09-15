@@ -6,6 +6,14 @@ import { useAuth } from '../hooks/useAuth.js'
 import { useToast } from '../hooks/useToast.js'
 import AuthLayout from '../layouts/AuthLayout.jsx'
 
+const loginDebugEnabled =
+  import.meta.env.DEV || import.meta.env.VITE_DEBUG_API === 'true'
+
+function loginDebug(event, details = {}) {
+  if (!loginDebugEnabled) return
+  console.info(`[DEBUG-cashmate-login] ${event}`, details)
+}
+
 export default function LoginPage() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -37,17 +45,31 @@ export default function LoginPage() {
       return
     }
     setSubmitting(true)
+    loginDebug('submit', {
+      emailProvided: Boolean(form.email.trim()),
+      passwordProvided: Boolean(form.password),
+      remember,
+    })
     try {
       const result = await login(
         { email: form.email.trim().toLowerCase(), password: form.password },
         remember,
       )
+      loginDebug('result', { forbidden: Boolean(result?.forbidden) })
       if (result.forbidden) {
         navigate('/forbidden', { replace: true })
         return
       }
       navigate(location.state?.from || '/dashboard', { replace: true })
     } catch (requestError) {
+      loginDebug('error', {
+        message: requestError.message,
+        status: requestError.status || null,
+        errorKeys:
+          requestError.errors && typeof requestError.errors === 'object'
+            ? Object.keys(requestError.errors)
+            : [],
+      })
       setError(requestError.message)
     } finally {
       setSubmitting(false)

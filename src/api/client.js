@@ -6,6 +6,36 @@ import {
   updateAccessToken,
 } from "./tokenStorage.js";
 
+const debugEnabled =
+  import.meta.env.DEV || import.meta.env.VITE_DEBUG_API === "true";
+const debugPrefix = "[DEBUG-cashmate-api]";
+let debugRequestId = 0;
+
+function debugLog(event, details = {}) {
+  if (!debugEnabled) return;
+  console.info(`${debugPrefix} ${event}`, details);
+}
+
+function responseSummary(data) {
+  if (!data || typeof data !== "object") {
+    return { dataType: typeof data };
+  }
+
+  return {
+    message: data.message,
+    dataKeys:
+      data.data && typeof data.data === "object"
+        ? Object.keys(data.data)
+        : [],
+    metaKeys:
+      data.meta && typeof data.meta === "object" ? Object.keys(data.meta) : [],
+    errorKeys:
+      data.errors && typeof data.errors === "object"
+        ? Object.keys(data.errors)
+        : [],
+  };
+}
+
 const configuredBaseURL = import.meta.env.VITE_API_BASE_URL;
 const baseURL = (() => {
   if (!import.meta.env.DEV || !configuredBaseURL) return configuredBaseURL;
@@ -16,6 +46,13 @@ const baseURL = (() => {
   }
 })();
 let refreshPromise = null;
+
+debugLog("config", {
+  mode: import.meta.env.MODE,
+  pageOrigin: window.location.origin,
+  configuredBaseURL: configuredBaseURL || null,
+  resolvedBaseURL: baseURL || null,
+});
 
 export const apiClient = axios.create({
   baseURL,
@@ -53,19 +90,62 @@ apiClient.interceptors.request.use((config) => {
   if (!configuredBaseURL) {
     return Promise.reject(configurationError());
   }
+
+  const requestId = ++debugRequestId;
+  config._cashmateDebug = {
+    requestId,
+    startedAt: performance.now(),
+  };
+
   const accessToken = getAccessToken();
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
+
+  debugLog("request", {
+    requestId,
+    method: config.method?.toUpperCase(),
+    url: config.url,
+    baseURL: config.baseURL,
+    hasAccessToken: Boolean(accessToken),
+    skipAuthRefresh: Boolean(config.skipAuthRefresh),
+  });
+
   return config;
 });
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const debug = response.config?._cashmateDebug;
+    debugLog("response", {
+      requestId: debug?.requestId,
+      method: response.config?.method?.toUpperCase(),
+      url: response.config?.url,
+      status: response.status,
+      durationMs: debug
+        ? Math.round(performance.now() - debug.startedAt)
+        : undefined,
+      response: responseSummary(response.data),
+    });
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config || {};
     const isUnauthorized = error.response?.status === 401;
     const refreshToken = getRefreshToken();
+
+    const debug = originalRequest._cashmateDebug;
+    debugLog("error", {
+      requestId: debug?.requestId,
+      method: originalRequest.method?.toUpperCase(),
+      url: originalRequest.url,
+      status: error.response?.status || null,
+      code: error.code || null,
+      message: error.message,
+      hasResponse: Boolean(error.response),
+      response: responseSummary(error.response?.data),
+      allowOrigin: error.response?.headers?.["access-control-allow-origin"] || null,
+    });
 
     if (
       isUnauthorized &&
@@ -75,6 +155,9 @@ apiClient.interceptors.response.use(
     ) {
       originalRequest._retry = true;
       if (!refreshPromise) {
+        debugLog("refresh:start", {
+          url: `${baseURL}/auth/refresh`,
+        });
         refreshPromise = axios
           .post(
             `${baseURL}/auth/refresh`,
@@ -82,10 +165,20 @@ apiClient.interceptors.response.use(
             { headers: { "Content-Type": "application/json" }, timeout: 15000 },
           )
           .then(({ data }) => {
+            debugLog("refresh:success", {
+              response: responseSummary(data),
+            });
             updateAccessToken(data.data.access_token);
             return data.data.access_token;
           })
           .catch((refreshError) => {
+            debugLog("refresh:error", {
+              status: refreshError.response?.status || null,
+              code: refreshError.code || null,
+              message: refreshError.message,
+              hasResponse: Boolean(refreshError.response),
+              response: responseSummary(refreshError.response?.data),
+            });
             clearTokens();
             notifySessionExpired();
             throw normalizeApiError(refreshError);
