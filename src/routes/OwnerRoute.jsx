@@ -1,0 +1,15 @@
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import FullPageLoader from '../components/FullPageLoader.jsx'
+import { useAuth } from '../hooks/useAuth.js'
+
+export default function OwnerRoute() {
+  const { status } = useAuth()
+  const location = useLocation()
+
+  if (status === 'loading') return <FullPageLoader />
+  if (status === 'forbidden') return <Navigate to="/forbidden" replace />
+  if (status !== 'authenticated') {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />
+  }
+  return <Outlet />
+}
