@@ -6,6 +6,11 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+.env
+
+AGENTS.md
+CashMate_BRD_v3.md
+CashMate_PRD_v1.md
 
 node_modules
 dist

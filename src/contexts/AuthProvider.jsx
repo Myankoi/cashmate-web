@@ -13,6 +13,13 @@ import {
 import { AuthContext } from "./authContext.js";
 
 const OWNER_ROLE = "OWNER";
+const authDebugEnabled =
+  import.meta.env.DEV || import.meta.env.VITE_DEBUG_API === "true";
+
+function authDebug(event, details = {}) {
+  if (!authDebugEnabled) return;
+  console.info(`[DEBUG-cashmate-auth] ${event}`, details);
+}
 
 export function AuthProvider({ children }) {
   const [status, setStatus] = useState("loading");
@@ -77,11 +84,24 @@ export function AuthProvider({ children }) {
   const login = useCallback(
     async (credentials, remember) => {
       const session = await loginOwner(credentials);
+      authDebug("session", {
+        hasAccessToken: Boolean(session?.access_token),
+        hasRefreshToken: Boolean(session?.refresh_token),
+        role: session?.user?.role || null,
+        hasUser: Boolean(session?.user),
+        hasBusiness: Boolean(session?.business),
+      });
       if (session.user?.role !== OWNER_ROLE) {
+        authDebug("forbidden", { role: session?.user?.role || null });
         setForbidden();
         return { forbidden: true };
       }
       storeTokens(session, remember);
+      authDebug("stored", {
+        remember,
+        hasAccessToken: Boolean(session?.access_token),
+        hasRefreshToken: Boolean(session?.refresh_token),
+      });
       setUser(session.user);
       setBusiness(session.business);
       setStatus("authenticated");
