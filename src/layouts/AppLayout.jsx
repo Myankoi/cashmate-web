@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   BookOpenText,
   ChartNoAxesCombined,
-  ChevronDown,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -163,7 +162,6 @@ export default function AppLayout() {
               <p className="max-w-40 truncate text-xs font-extrabold text-slate-800">{user?.name}</p>
               <p className="text-[10px] font-semibold text-slate-400">Owner</p>
             </div>
-            <ChevronDown className="hidden h-4 w-4 shrink-0 text-slate-400 sm:block" />
           </Link>
         </header>
         <main className="mx-auto w-full max-w-[1440px] p-4 sm:p-6 lg:p-8">
