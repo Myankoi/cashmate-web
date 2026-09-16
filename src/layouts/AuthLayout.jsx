@@ -1,10 +1,7 @@
-import { ArrowRight } from 'lucide-react'
-import { Link } from 'react-router-dom'
 import authIllustration from '../assets/figma/auth-illustration.png'
 import Brand from '../components/Brand.jsx'
 
-export default function AuthLayout({ mode, children }) {
-  const isLogin = mode === 'login'
+export default function AuthLayout({ children }) {
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 px-4 py-8 sm:px-6 lg:py-10">
       <div className="auth-glow relative w-full max-w-[1040px] rounded-[32px] border border-slate-100 bg-white/65 p-3 shadow-sm backdrop-blur-sm sm:p-6">
@@ -40,14 +37,6 @@ export default function AuthLayout({ mode, children }) {
               <div className="lg:hidden">
                 <Brand />
               </div>
-              {!isLogin && (
-                <Link
-                  to="/login"
-                  className="flex items-center gap-1 text-xs font-bold text-brand-600 hover:text-brand-700"
-                >
-                  Masuk <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              )}
             </div>
             <div className="my-auto">{children}</div>
           </section>
