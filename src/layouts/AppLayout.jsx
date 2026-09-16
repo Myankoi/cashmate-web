@@ -118,7 +118,11 @@ function Sidebar({ open, onClose, onLogout, loggingOut, collapsed, onToggle }) {
             src={walletIllustration}
             alt=""
             aria-hidden="true"
-            className="mx-auto h-28 w-32 object-contain opacity-95"
+            className="mx-auto h-44 w-48 object-contain opacity-90"
+            style={{
+              maskImage: 'linear-gradient(to bottom, black 55%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, black 55%, transparent 100%)',
+            }}
           />
         </div>
 
