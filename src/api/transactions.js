@@ -5,6 +5,26 @@ export async function getTransactions(params = {}) {
   return { items: response.data.data, meta: response.data.meta };
 }
 
+export async function getAllTransactions(params = {}) {
+  const items = [];
+  const perPage = 100;
+  let page = 1;
+  let lastPage;
+
+  do {
+    const result = await getTransactions({
+      ...params,
+      page,
+      per_page: perPage,
+    });
+    items.push(...result.items);
+    lastPage = Number(result.meta?.last_page) || 1;
+    page += 1;
+  } while (page <= lastPage);
+
+  return items;
+}
+
 // Ke resolver membaca foto transaksi dari multipart field "photos".
 const PHOTO_FIELD = "photos";
 

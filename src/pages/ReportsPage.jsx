@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowDownRight, ArrowUpRight, CalendarDays, CircleDollarSign, FileBarChart2 } from 'lucide-react'
+import { getAllTransactions } from '../api/transactions.js'
 import { getMonthlyReport } from '../api/reports.js'
+import CategoryPieChart from '../components/CategoryPieChart.jsx'
 import MonthlyChart from '../components/MonthlyChart.jsx'
 import PageHeader from '../components/PageHeader.jsx'
 import { EmptyState, ErrorState, LoadingState, TextInput } from '../components/ui.jsx'
@@ -32,8 +34,11 @@ export default function ReportsPage() {
   const currentYear = Number(todayInJakarta().slice(0, 4))
   const [year, setYear] = useState(currentYear)
   const [report, setReport] = useState([])
+  const [categoryTransactions, setCategoryTransactions] = useState([])
   const [loading, setLoading] = useState(true)
+  const [categoryLoading, setCategoryLoading] = useState(true)
   const [error, setError] = useState('')
+  const [categoryError, setCategoryError] = useState('')
   const requestVersion = useRef(0)
 
   const loadReport = useCallback(async () => {
@@ -59,10 +64,32 @@ export default function ReportsPage() {
     }
   }, [year])
 
+  const loadCategoryTransactions = useCallback(async () => {
+    setCategoryLoading(true)
+    setCategoryError('')
+    try {
+      const transactions = await getAllTransactions({
+        status: 'active',
+        from_date: `${year}-01-01`,
+        to_date: `${year}-12-31`,
+      })
+      setCategoryTransactions(transactions)
+    } catch (requestError) {
+      setCategoryError(requestError.message)
+    } finally {
+      setCategoryLoading(false)
+    }
+  }, [year])
+
   useEffect(() => {
     const timeout = window.setTimeout(loadReport, 0)
     return () => window.clearTimeout(timeout)
   }, [loadReport])
+
+  useEffect(() => {
+    const timeout = window.setTimeout(loadCategoryTransactions, 0)
+    return () => window.clearTimeout(timeout)
+  }, [loadCategoryTransactions])
 
   const totals = useMemo(
     () =>
@@ -125,6 +152,19 @@ export default function ReportsPage() {
               <p className="mt-1 text-xs text-slate-400">Pemasukan dan pengeluaran sepanjang {year}</p>
             </div>
             <MonthlyChart data={report} height={260} />
+          </section>
+
+          <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
+            <div className="mb-6">
+              <h2 className="font-extrabold text-slate-900">Rekap Kategori</h2>
+              <p className="mt-1 text-xs text-slate-400">Distribusi transaksi aktif sepanjang {year}</p>
+            </div>
+            <CategoryPieChart
+              transactions={categoryTransactions}
+              loading={categoryLoading}
+              error={categoryError}
+              onRetry={loadCategoryTransactions}
+            />
           </section>
 
           <section className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
