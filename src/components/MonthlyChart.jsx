@@ -57,7 +57,7 @@ export default function MonthlyChart({ data = [], height = 220 }) {
         </span>
       </div>
       <div className="app-scrollbar overflow-x-auto pb-2">
-        <div className="min-w-[620px]">
+        <div className="w-full min-w-[620px]">
           <svg
             viewBox={`0 0 ${chartWidth} ${chartHeight}`}
             role="img"

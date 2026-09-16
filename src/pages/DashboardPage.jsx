@@ -202,7 +202,7 @@ export default function DashboardPage() {
         ) : null}
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
           <div className="mb-6 flex items-center justify-between gap-4">
             <div>
