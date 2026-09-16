@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Plus, RotateCcw, SquarePen, Trash2, WalletCards } from 'lucide-react'
 import {
   createWallet,
@@ -85,16 +85,21 @@ export default function WalletsPage() {
   const [formState, setFormState] = useState(null)
   const [action, setAction] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
+  const requestVersion = useRef(0)
 
   const loadWallets = useCallback(async () => {
+    const requestVersionAtStart = ++requestVersion.current
     setLoading(true)
     setError('')
     try {
-      setWallets(await getWallets(status))
+      const data = await getWallets(status)
+      if (requestVersionAtStart !== requestVersion.current) return
+      setWallets(data)
     } catch (requestError) {
+      if (requestVersionAtStart !== requestVersion.current) return
       setError(requestError.message)
     } finally {
-      setLoading(false)
+      if (requestVersionAtStart === requestVersion.current) setLoading(false)
     }
   }, [status])
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Eye, EyeOff, Mail, Plus, Trash2, UserRound, Users } from 'lucide-react'
 import { createStaff, disableStaff, getStaff } from '../api/staff.js'
 import PageHeader from '../components/PageHeader.jsx'
@@ -102,16 +102,21 @@ export default function StaffPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
+  const requestVersion = useRef(0)
 
   const loadStaff = useCallback(async () => {
+    const requestVersionAtStart = ++requestVersion.current
     setLoading(true)
     setError('')
     try {
-      setStaff(await getStaff(status))
+      const data = await getStaff(status)
+      if (requestVersionAtStart !== requestVersion.current) return
+      setStaff(data)
     } catch (requestError) {
+      if (requestVersionAtStart !== requestVersion.current) return
       setError(requestError.message)
     } finally {
-      setLoading(false)
+      if (requestVersionAtStart === requestVersion.current) setLoading(false)
     }
   }, [status])
 

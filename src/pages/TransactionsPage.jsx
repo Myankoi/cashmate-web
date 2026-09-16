@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { FilterX, Plus, ReceiptText } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { getCategories } from '../api/categories.js'
@@ -49,34 +49,44 @@ export default function TransactionsPage() {
   const [categories, setCategories] = useState([])
   const [staff, setStaff] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [transactionsError, setTransactionsError] = useState('')
+  const [optionsError, setOptionsError] = useState('')
   const [editTarget, setEditTarget] = useState(null)
   const [action, setAction] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
+  const optionsRequestVersion = useRef(0)
+  const transactionRequestVersion = useRef(0)
 
   const loadOptions = useCallback(async () => {
+    const requestVersionAtStart = ++optionsRequestVersion.current
+    setOptionsError('')
     try {
       const [walletData, categoryData, staffData] = await Promise.all([
         getWallets('all'),
         getCategories('all'),
         getStaff('all'),
       ])
+      if (requestVersionAtStart !== optionsRequestVersion.current) return
       setWallets(walletData)
       setCategories(categoryData)
       setStaff(staffData)
     } catch (requestError) {
-      setError(requestError.message)
+      if (requestVersionAtStart !== optionsRequestVersion.current) return
+      setOptionsError(requestError.message)
     }
   }, [])
 
   const loadTransactions = useCallback(async () => {
+    const requestVersionAtStart = ++transactionRequestVersion.current
     if (filters.from_date && filters.to_date && filters.from_date > filters.to_date) {
-      setError('Tanggal awal tidak boleh lebih besar dari tanggal akhir.')
-      setLoading(false)
+      if (requestVersionAtStart === transactionRequestVersion.current) {
+        setTransactionsError('Tanggal awal tidak boleh lebih besar dari tanggal akhir.')
+        setLoading(false)
+      }
       return
     }
     setLoading(true)
-    setError('')
+    setTransactionsError('')
     try {
       const result = await getTransactions({
         ...filters,
@@ -88,12 +98,14 @@ export default function TransactionsPage() {
         to_date: filters.to_date || undefined,
         per_page: 15,
       })
+      if (requestVersionAtStart !== transactionRequestVersion.current) return
       setTransactions(result.items)
       setMeta(result.meta)
     } catch (requestError) {
-      setError(requestError.message)
+      if (requestVersionAtStart !== transactionRequestVersion.current) return
+      setTransactionsError(requestError.message)
     } finally {
-      setLoading(false)
+      if (requestVersionAtStart === transactionRequestVersion.current) setLoading(false)
     }
   }, [filters])
 
@@ -214,13 +226,19 @@ export default function TransactionsPage() {
             <FilterX className="h-4 w-4" /> Reset filter
           </button>
         )}
+        {optionsError && (
+          <div className="mt-4 flex flex-col gap-3 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800 sm:flex-row sm:items-center sm:justify-between">
+            <p className="font-medium">Filter dompet, kategori, dan pencatat belum dapat dimuat: {optionsError}</p>
+            <Button size="sm" variant="secondary" onClick={loadOptions}>Coba lagi</Button>
+          </div>
+        )}
       </section>
 
       <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:p-6">
         {loading ? (
           <LoadingState rows={6} />
-        ) : error ? (
-          <ErrorState message={error} onRetry={loadTransactions} />
+        ) : transactionsError ? (
+          <ErrorState message={transactionsError} onRetry={loadTransactions} />
         ) : !transactions.length ? (
           <EmptyState
             icon={ReceiptText}

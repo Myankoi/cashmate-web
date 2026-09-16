@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowDownRight,
   ArrowRight,
@@ -72,27 +72,55 @@ function MetricCard({ label, value, icon: Icon, tone }) {
 export default function DashboardPage() {
   const { user } = useAuth();
   const [summary, setSummary] = useState(null);
-  const [report, setReport] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [report, setReport] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(true);
+  const [reportLoading, setReportLoading] = useState(true);
+  const [summaryError, setSummaryError] = useState("");
+  const [reportError, setReportError] = useState("");
+  const summaryRequestVersion = useRef(0);
+  const reportRequestVersion = useRef(0);
   const year = Number(todayInJakarta().slice(0, 4));
 
-  const loadDashboard = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const loadSummary = useCallback(async () => {
+    const requestVersionAtStart = ++summaryRequestVersion.current;
+    setSummaryLoading(true);
+    setSummaryError("");
     try {
-      const [summaryData, reportData] = await Promise.all([
-        getDashboardSummary(),
-        getMonthlyReport(year),
-      ]);
+      const summaryData = await getDashboardSummary();
+      if (requestVersionAtStart !== summaryRequestVersion.current) return;
       setSummary(summaryData);
+    } catch (requestError) {
+      if (requestVersionAtStart !== summaryRequestVersion.current) return;
+      setSummaryError(requestError.message);
+    } finally {
+      if (requestVersionAtStart === summaryRequestVersion.current) {
+        setSummaryLoading(false);
+      }
+    }
+  }, []);
+
+  const loadReport = useCallback(async () => {
+    const requestVersionAtStart = ++reportRequestVersion.current;
+    setReportLoading(true);
+    setReportError("");
+    try {
+      const reportData = await getMonthlyReport(year);
+      if (requestVersionAtStart !== reportRequestVersion.current) return;
       setReport(reportData);
     } catch (requestError) {
-      setError(requestError.message);
+      if (requestVersionAtStart !== reportRequestVersion.current) return;
+      setReportError(requestError.message);
     } finally {
-      setLoading(false);
+      if (requestVersionAtStart === reportRequestVersion.current) {
+        setReportLoading(false);
+      }
     }
   }, [year]);
+
+  const loadDashboard = useCallback(() => {
+    void loadSummary();
+    void loadReport();
+  }, [loadReport, loadSummary]);
 
   useEffect(() => {
     const timeout = window.setTimeout(loadDashboard, 0);
@@ -114,13 +142,15 @@ export default function DashboardPage() {
         }
       />
 
-      {loading ? (
-        <LoadingState rows={5} />
-      ) : error ? (
-        <ErrorState message={error} onRetry={loadDashboard} />
-      ) : (
-        <>
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {summaryLoading && !summary ? (
+          <LoadingState rows={1} />
+        ) : summaryError && !summary ? (
+          <div className="sm:col-span-2 xl:col-span-4">
+            <ErrorState message={summaryError} onRetry={loadSummary} />
+          </div>
+        ) : summary ? (
+          <>
             <MetricCard
               label="Saldo Saat Ini"
               value={summary.total_balance}
@@ -145,71 +175,73 @@ export default function DashboardPage() {
               icon={CircleDollarSign}
               tone="net"
             />
-          </section>
+          </>
+        ) : null}
+      </section>
 
-          <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
-              <div className="mb-6 flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="font-extrabold text-slate-900">
-                    Grafik Keuangan
-                  </h2>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Pergerakan kas sepanjang {year}
-                  </p>
-                </div>
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
+          <div className="mb-6 flex items-center justify-between gap-4">
+            <div>
+              <h2 className="font-extrabold text-slate-900">Grafik Keuangan</h2>
+              <p className="mt-1 text-xs text-slate-400">Pergerakan kas sepanjang {year}</p>
+            </div>
+            <Link
+              to="/reports"
+              className="text-xs font-bold text-brand-600 hover:text-brand-700"
+            >
+              Lihat rekap <ArrowRight className="inline h-3.5 w-3.5" />
+            </Link>
+          </div>
+          {reportLoading && report === null ? (
+            <LoadingState rows={3} />
+          ) : reportError && report === null ? (
+            <ErrorState message={reportError} onRetry={loadReport} />
+          ) : report !== null ? (
+            <MonthlyChart data={report} />
+          ) : null}
+        </div>
+
+        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
+          <div className="mb-5 flex items-center justify-between">
+            <div>
+              <h2 className="font-extrabold text-slate-900">Transaksi Terbaru</h2>
+              <p className="mt-1 text-xs text-slate-400">
+                {summary?.transaction_count ?? "—"} transaksi aktif
+              </p>
+            </div>
+            <ReceiptText className="h-5 w-5 text-brand-500" />
+          </div>
+          {summaryLoading && !summary ? (
+            <LoadingState rows={3} />
+          ) : summaryError && !summary ? (
+            <ErrorState message={summaryError} onRetry={loadSummary} />
+          ) : summary ? (
+            summary.latest_transactions.length ? (
+              <div className="space-y-3">
+                {summary.latest_transactions.map((transaction) => (
+                  <TransactionRow
+                    key={transaction.id}
+                    transaction={transaction}
+                    compact
+                  />
+                ))}
                 <Link
-                  to="/reports"
-                  className="text-xs font-bold text-brand-600 hover:text-brand-700"
+                  to="/transactions"
+                  className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-slate-50 py-3 text-xs font-bold text-brand-600 hover:bg-brand-50"
                 >
-                  Lihat rekap <ArrowRight className="inline h-3.5 w-3.5" />
+                  Lihat semua transaksi <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </div>
-              <MonthlyChart data={report} />
-            </div>
-
-            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
-              <div className="mb-5 flex items-center justify-between">
-                <div>
-                  <h2 className="font-extrabold text-slate-900">
-                    Transaksi Terbaru
-                  </h2>
-                  <p className="mt-1 text-xs text-slate-400">
-                    {summary.transaction_count} transaksi aktif
-                  </p>
-                </div>
-                <ReceiptText className="h-5 w-5 text-brand-500" />
+            ) : (
+              <div className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center">
+                <p className="text-sm font-bold text-slate-700">Belum ada transaksi</p>
+                <p className="mt-1 text-xs text-slate-400">Catat pemasukan atau pengeluaran pertama.</p>
               </div>
-              {summary.latest_transactions.length ? (
-                <div className="space-y-3">
-                  {summary.latest_transactions.map((transaction) => (
-                    <TransactionRow
-                      key={transaction.id}
-                      transaction={transaction}
-                      compact
-                    />
-                  ))}
-                  <Link
-                    to="/transactions"
-                    className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-slate-50 py-3 text-xs font-bold text-brand-600 hover:bg-brand-50"
-                  >
-                    Lihat semua transaksi <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
-                </div>
-              ) : (
-                <div className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center">
-                  <p className="text-sm font-bold text-slate-700">
-                    Belum ada transaksi
-                  </p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Catat pemasukan atau pengeluaran pertama.
-                  </p>
-                </div>
-              )}
-            </div>
-          </section>
-        </>
-      )}
+            )
+          ) : null}
+        </div>
+      </section>
     </div>
   );
 }

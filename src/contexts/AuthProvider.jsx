@@ -23,11 +23,14 @@ function authDebug(event, details = {}) {
 
 export function AuthProvider({ children }) {
   const [status, setStatus] = useState("loading");
+  const [bootstrapError, setBootstrapError] = useState("");
+  const [bootstrapAttempt, setBootstrapAttempt] = useState(0);
   const [user, setUser] = useState(null);
   const [business, setBusiness] = useState(null);
 
   const setGuest = useCallback(() => {
     clearTokens();
+    setBootstrapError("");
     setUser(null);
     setBusiness(null);
     setStatus("guest");
@@ -35,6 +38,7 @@ export function AuthProvider({ children }) {
 
   const setForbidden = useCallback(() => {
     clearTokens();
+    setBootstrapError("");
     setUser(null);
     setBusiness(null);
     setStatus("forbidden");
@@ -45,7 +49,10 @@ export function AuthProvider({ children }) {
 
     async function bootstrap() {
       if (!hasStoredSession()) {
-        if (active) setStatus("guest");
+        if (active) {
+          setBootstrapError("");
+          setStatus("guest");
+        }
         return;
       }
       try {
@@ -55,11 +62,18 @@ export function AuthProvider({ children }) {
           setForbidden();
           return;
         }
+        setBootstrapError("");
         setUser(session.user);
         setBusiness(session.business);
         setStatus("authenticated");
-      } catch {
-        if (active) setGuest();
+      } catch (requestError) {
+        if (!active) return;
+        if (requestError.status === 401) {
+          setGuest();
+          return;
+        }
+        setBootstrapError(requestError.message || "Sesi belum dapat diperiksa.");
+        setStatus("error");
       }
     }
 
@@ -67,7 +81,7 @@ export function AuthProvider({ children }) {
     return () => {
       active = false;
     };
-  }, [setForbidden, setGuest]);
+  }, [bootstrapAttempt, setForbidden, setGuest]);
 
   useEffect(() => {
     function handleSessionExpired() {
@@ -124,6 +138,12 @@ export function AuthProvider({ children }) {
 
   const resetForbidden = useCallback(() => setGuest(), [setGuest]);
 
+  const retryBootstrap = useCallback(() => {
+    setBootstrapError("");
+    setStatus("loading");
+    setBootstrapAttempt((attempt) => attempt + 1);
+  }, []);
+
   const value = useMemo(
     () => ({
       status,
@@ -133,8 +153,20 @@ export function AuthProvider({ children }) {
       register,
       logout,
       resetForbidden,
+      authError: bootstrapError,
+      retryBootstrap,
     }),
-    [status, user, business, login, register, logout, resetForbidden],
+    [
+      status,
+      user,
+      business,
+      login,
+      register,
+      logout,
+      resetForbidden,
+      bootstrapError,
+      retryBootstrap,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

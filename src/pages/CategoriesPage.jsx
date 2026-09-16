@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowDownLeft, ArrowUpRight, Globe2, Plus, RotateCcw, SquarePen, Tags, Trash2 } from 'lucide-react'
 import {
   createCategory,
@@ -95,16 +95,21 @@ export default function CategoriesPage() {
   const [formState, setFormState] = useState(null)
   const [action, setAction] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
+  const requestVersion = useRef(0)
 
   const loadCategories = useCallback(async () => {
+    const requestVersionAtStart = ++requestVersion.current
     setLoading(true)
     setError('')
     try {
-      setCategories(await getCategories(status, type))
+      const data = await getCategories(status, type)
+      if (requestVersionAtStart !== requestVersion.current) return
+      setCategories(data)
     } catch (requestError) {
+      if (requestVersionAtStart !== requestVersion.current) return
       setError(requestError.message)
     } finally {
-      setLoading(false)
+      if (requestVersionAtStart === requestVersion.current) setLoading(false)
     }
   }, [status, type])
 

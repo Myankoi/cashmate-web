@@ -1,4 +1,4 @@
-import logo from '../assets/figma/cashmate-logo.svg'
+import logo from '../assets/figma/cashmate-logo.png'
 
 export default function Brand({ compact = false, inverse = false }) {
   return (
