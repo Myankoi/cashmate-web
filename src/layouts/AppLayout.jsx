@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import walletIllustration from '../assets/figma/wallet-illustration.png'
 import Brand from '../components/Brand.jsx'
 import { useAuth } from '../hooks/useAuth.js'
 import { assetUrl } from '../utils/assetUrl.js'
@@ -89,6 +90,15 @@ function Sidebar({ open, onClose, onLogout, loggingOut }) {
             )
           })}
         </nav>
+
+        <div className="px-4 pb-4">
+          <img
+            src={walletIllustration}
+            alt=""
+            aria-hidden="true"
+            className="mx-auto h-28 w-32 object-contain opacity-95"
+          />
+        </div>
 
         <div className="border-t border-white/10 p-4">
           <button
