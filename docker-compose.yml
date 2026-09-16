@@ -1,0 +1,12 @@
+services:
+  web:
+    container_name: cashmate-web
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8096/api}
+        VITE_DEBUG_API: ${VITE_DEBUG_API:-false}
+    ports:
+      - "${CASHMATE_WEB_PORT:-9086}:9086"
+    restart: unless-stopped
