@@ -6,6 +6,7 @@ import { useToast } from '../hooks/useToast.js'
 import { assetUrl } from '../utils/assetUrl.js'
 import { classNames } from '../utils/classNames.js'
 import { initials } from '../utils/formatters.js'
+import { isSupportedImage, MAX_IMAGE_SIZE_BYTES } from '../utils/uploads.js'
 import { Button } from './ui.jsx'
 
 function previewFromFile(file) {
@@ -31,8 +32,12 @@ export default function AvatarUploader({ className }) {
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file) return
-    if (!file.type.startsWith('image/')) {
+    if (!isSupportedImage(file)) {
       setError('Hanya file gambar (JPG, PNG, WEBP) yang dapat diunggah.')
+      return
+    }
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      setError('Ukuran foto maksimal 5 MB.')
       return
     }
     setError('')

@@ -1,6 +1,11 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { ImagePlus, UploadCloud, X } from 'lucide-react'
 import { classNames } from '../utils/classNames.js'
+import {
+  isSupportedImage,
+  MAX_IMAGE_SIZE_BYTES,
+  MAX_TOTAL_UPLOAD_BYTES,
+} from '../utils/uploads.js'
 
 const MAX_PHOTOS = 10
 
@@ -30,28 +35,52 @@ export default function PhotoDropzone({
   }
 
   function pushFiles(fileList) {
-    const incoming = Array.from(fileList || []).filter((file) => file.type.startsWith('image/'))
-    if (incoming.length !== Array.from(fileList || []).length) {
-      setError('Hanya file gambar (JPG, PNG, WEBP) yang dapat dilampirkan.')
+    const selected = Array.from(fileList || [])
+    const invalidTypeCount = selected.filter((file) => !isSupportedImage(file)).length
+    const incoming = selected.filter(isSupportedImage)
+    const oversizedCount = incoming.filter((file) => file.size > MAX_IMAGE_SIZE_BYTES).length
+    const candidates = incoming.filter((file) => file.size <= MAX_IMAGE_SIZE_BYTES && file.size > 0)
+    const messages = []
+
+    if (invalidTypeCount) messages.push('Hanya file JPG, PNG, atau WEBP yang dapat dilampirkan.')
+    if (oversizedCount) messages.push('Setiap foto maksimal 5 MB.')
+    if (!candidates.length) {
+      setError(messages.join(' ') || 'Pilih minimal satu foto.')
+      return
     }
-    if (!incoming.length) return
 
     const remaining = maxFiles - items.length
     if (remaining <= 0) {
       setError(`Maksimal ${maxFiles} foto per transaksi.`)
       return
     }
-    const accepted = incoming.slice(0, remaining)
+    const existingSize = items.reduce((total, item) => total + item.file.size, 0)
+    let acceptedSize = existingSize
+    const accepted = []
+    for (const file of candidates) {
+      if (accepted.length >= remaining) break
+      if (acceptedSize + file.size > MAX_TOTAL_UPLOAD_BYTES) continue
+      accepted.push(file)
+      acceptedSize += file.size
+    }
+
+    if (candidates.length > accepted.length) {
+      messages.push('Total ukuran foto per kiriman maksimal 9 MB.')
+    }
+    if (!accepted.length) {
+      setError(messages.join(' '))
+      return
+    }
     const nextItems = [
       ...items,
       ...accepted.map((file) => ({ file, url: trackUrl(URL.createObjectURL(file)) })),
     ]
 
     setItems(nextItems)
-    setError('')
+    setError(messages.join(' '))
     onFilesChange(nextItems.map((item) => item.file))
     if (incoming.length > remaining) {
-      setError(`Maksimal ${maxFiles} foto per transaksi. ${incoming.length - remaining} foto tidak dilampirkan.`)
+      setError(`${messages.join(' ')} Maksimal ${maxFiles} foto per transaksi.`.trim())
     }
   }
 
@@ -107,7 +136,7 @@ export default function PhotoDropzone({
         </span>
         <span className="text-sm font-bold">Seret & lepas atau klik untuk pilih foto</span>
         <span className="text-xs font-medium text-slate-400">
-          Bukti transaksi / struk · maks. {maxFiles} foto
+          JPG, PNG, WEBP · maks. 5 MB/foto · total 9 MB
         </span>
       </button>
 
