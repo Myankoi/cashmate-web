@@ -18,6 +18,7 @@ import { useAuth } from '../hooks/useAuth.js'
 import { assetUrl } from '../utils/assetUrl.js'
 import { classNames } from '../utils/classNames.js'
 import { initials } from '../utils/formatters.js'
+import { ConfirmDialog } from '../components/ui.jsx'
 
 const navigation = [
   { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
@@ -108,6 +109,7 @@ function Sidebar({ open, onClose, onLogout, loggingOut }) {
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false)
   const { user, business, logout } = useAuth()
   const navigate = useNavigate()
 
@@ -126,7 +128,7 @@ export default function AppLayout() {
       <Sidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        onLogout={handleLogout}
+        onLogout={() => setLogoutDialogOpen(true)}
         loggingOut={loggingOut}
       />
       <div className="lg:pl-[250px]">
@@ -168,6 +170,15 @@ export default function AppLayout() {
           <Outlet />
         </main>
       </div>
+      <ConfirmDialog
+        open={logoutDialogOpen}
+        title="Keluar dari CashMate?"
+        description="Sesi Anda akan diakhiri dan Anda perlu login kembali untuk mengakses data usaha."
+        confirmLabel="Ya, keluar"
+        onConfirm={handleLogout}
+        onClose={() => setLogoutDialogOpen(false)}
+        loading={loggingOut}
+      />
     </div>
   )
 }
