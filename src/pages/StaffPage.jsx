@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Eye, EyeOff, Mail, Plus, Trash2, UserRound, Users } from 'lucide-react'
-import { createStaff, disableStaff, getStaff } from '../api/staff.js'
+import { Eye, EyeOff, Mail, Plus, RotateCcw, Trash2, UserRound, Users } from 'lucide-react'
+import { createStaff, disableStaff, getStaff, restoreStaff } from '../api/staff.js'
 import PageHeader from '../components/PageHeader.jsx'
 import {
   Button,
@@ -101,6 +101,7 @@ export default function StaffPage() {
   const [error, setError] = useState('')
   const [formOpen, setFormOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [restoreTarget, setRestoreTarget] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
   const requestVersion = useRef(0)
 
@@ -138,6 +139,20 @@ export default function StaffPage() {
       await disableStaff(deleteTarget.id)
       setDeleteTarget(null)
       showToast('Akun Staff berhasil dinonaktifkan.')
+      await loadStaff()
+    } catch (requestError) {
+      showToast(requestError.message, 'error')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  async function handleRestore() {
+    setActionLoading(true)
+    try {
+      await restoreStaff(restoreTarget.id)
+      setRestoreTarget(null)
+      showToast('Akun Staff berhasil diaktifkan kembali.')
       await loadStaff()
     } catch (requestError) {
       showToast(requestError.message, 'error')
@@ -198,7 +213,9 @@ export default function StaffPage() {
                       <Trash2 className="h-4 w-4" /> Nonaktifkan Staff
                     </Button>
                   ) : (
-                    <p className="text-center text-xs leading-5 text-slate-400">Akun nonaktif. Histori transaksi Staff tetap tersimpan.</p>
+                    <Button variant="soft" size="sm" className="w-full" onClick={() => setRestoreTarget(member)}>
+                      <RotateCcw className="h-4 w-4" /> Aktifkan Staff
+                    </Button>
                   )}
                 </div>
               </article>
@@ -224,6 +241,24 @@ export default function StaffPage() {
           <div className="rounded-xl bg-slate-50 p-4">
             <p className="text-sm font-extrabold text-slate-800">{deleteTarget.name}</p>
             <p className="mt-1 text-xs text-slate-500">{deleteTarget.email}</p>
+          </div>
+        )}
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        open={Boolean(restoreTarget)}
+        onClose={() => setRestoreTarget(null)}
+        onConfirm={handleRestore}
+        loading={actionLoading}
+        tone="primary"
+        title="Aktifkan kembali akun Staff?"
+        description="Staff dapat login kembali melalui aplikasi Mobile. Histori transaksi yang sudah dibuat tetap tersimpan."
+        confirmLabel="Aktifkan Staff"
+      >
+        {restoreTarget && (
+          <div className="rounded-xl bg-slate-50 p-4">
+            <p className="text-sm font-extrabold text-slate-800">{restoreTarget.name}</p>
+            <p className="mt-1 text-xs text-slate-500">{restoreTarget.email}</p>
           </div>
         )}
       </ConfirmDialog>

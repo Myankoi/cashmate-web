@@ -11,3 +11,7 @@ export async function createStaff(payload) {
 export async function disableStaff(id) {
   return unwrap(await apiClient.delete(`/staff/${id}`));
 }
+
+export async function restoreStaff(id) {
+  return unwrap(await apiClient.post(`/staff/${id}/restore`));
+}
