@@ -157,7 +157,7 @@ export default function AppLayout() {
           </div>
           <Link
             to="/profile"
-            className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-2.5 py-2 shadow-sm transition hover:border-slate-200"
+            className="flex items-center gap-3 rounded-xl px-2.5 py-2 transition hover:bg-slate-50"
           >
             {user?.profile_photo ? (
               <img
