@@ -1,32 +1,33 @@
-<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
   <title>CashMate</title>
   <defs>
-    <linearGradient id="wallet" x1="23" y1="48" x2="105" y2="111" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#1677F0" />
-      <stop offset="1" stop-color="#0754C7" />
+    <linearGradient id="cashmate-blue" x1="84" y1="145" x2="426" y2="470" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1478EE" />
+      <stop offset="1" stop-color="#0755C9" />
     </linearGradient>
-    <linearGradient id="gold" x1="45" y1="7" x2="97" y2="101" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FFC928" />
-      <stop offset="1" stop-color="#F5A900" />
+    <linearGradient id="cashmate-yellow" x1="111" y1="22" x2="454" y2="378" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFD02A" />
+      <stop offset="1" stop-color="#F5AA00" />
     </linearGradient>
-    <linearGradient id="goldLight" x1="29" y1="12" x2="85" y2="37" gradientUnits="userSpaceOnUse">
+    <linearGradient id="cashmate-yellow-soft" x1="52" y1="34" x2="285" y2="161" gradientUnits="userSpaceOnUse">
       <stop stop-color="#FFD13A" />
-      <stop offset="1" stop-color="#F7B20D" />
+      <stop offset="1" stop-color="#F6B20A" />
     </linearGradient>
   </defs>
 
-  <path d="M29.2 41.4 25.8 28.7a11 11 0 0 1 7.4-13.2L83.4 1.8a11 11 0 0 1 13.4 7.5l4.3 15.2-71.9 16.9Z" fill="url(#goldLight)" />
-  <path d="M40.1 42.9V33a12 12 0 0 1 9.1-11.6l49.1-12.1a10 10 0 0 1 12.4 7.3l3.8 15.2-74.4 11.1Z" fill="url(#gold)" />
+  <path d="M49 111 51 95a26 26 0 0 1 18-23L253 23a21 21 0 0 1 26 15l12 39-209 58-33-24Z" fill="url(#cashmate-yellow-soft)" />
+  <path d="M109 160v-38a28 28 0 0 1 21-27L279 57a22 22 0 0 1 28 21v82H109Z" fill="url(#cashmate-yellow)" />
+  <path d="M112 160v-31c0-15 10-28 25-32l143-36" stroke="white" stroke-width="12" stroke-linecap="round" />
 
-  <rect x="101" y="15" width="12" height="35" rx="6" fill="#0964D9" />
-  <rect x="83" y="28" width="12" height="22" rx="6" fill="#0B6CE2" />
-  <rect x="65" y="37" width="12" height="13" rx="6" fill="#1477EA" />
+  <rect x="418" y="43" width="35" height="104" rx="16" fill="#0965D9" />
+  <rect x="370" y="75" width="35" height="72" rx="16" fill="#0B6CE0" />
+  <rect x="324" y="103" width="36" height="44" rx="16" fill="#1478EA" />
 
-  <path d="M28 47h66c13.8 0 25 11.2 25 25v27c0 13.8-11.2 25-25 25H28c-13.8 0-25-11.2-25-25V72c0-13.8 11.2-25 25-25Z" fill="#073F9F" opacity=".18" />
-  <path d="M28 43h66c13.8 0 25 11.2 25 25v27c0 13.8-11.2 25-25 25H28c-13.8 0-25-11.2-25-25V68c0-13.8 11.2-25 25-25Z" fill="url(#wallet)" />
+  <path d="M91 166h287c36 0 65 29 65 65v175c0 36-29 65-65 65H91c-36 0-65-29-65-65V231c0-36 29-65 65-65Z" fill="#0645A7" opacity=".2" />
+  <path d="M91 158h287c36 0 65 29 65 65v175c0 36-29 65-65 65H91c-36 0-65-29-65-65V223c0-36 29-65 65-65Z" fill="url(#cashmate-blue)" />
 
-  <path d="M76.5 61.4c-5.1-5.4-12.3-8.4-19.7-8.4-15.1 0-27.3 12.2-27.3 27.3 0 15.1 12.2 27.3 27.3 27.3 7.4 0 14.6-3 19.7-8.4" stroke="white" stroke-width="12" stroke-linecap="round" />
+  <path d="M304 247c-25-27-57-43-92-43-70 0-120 47-120 112s50 112 120 112c35 0 67-16 92-43" stroke="white" stroke-width="58" stroke-linecap="round" />
 
-  <path d="M91 65h19c8.3 0 15 6.7 15 15v15c0 8.3-6.7 15-15 15H91c-11 0-20-8.9-20-20s9-20 20-20Z" fill="url(#gold)" />
-  <circle cx="91" cy="85" r="7" fill="white" />
+  <path d="M359 250h72c34 0 62 28 62 62s-28 62-62 62h-72c-34 0-62-28-62-62s28-62 62-62Z" fill="url(#cashmate-yellow)" stroke="white" stroke-width="16" />
+  <circle cx="381" cy="312" r="14" fill="white" />
 </svg>
