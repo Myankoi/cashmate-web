@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Plus, RotateCcw, SquarePen, Trash2, WalletCards } from 'lucide-react'
+import walletIllustration from '../assets/figma/wallet-illustration.png'
 import {
   createWallet,
   disableWallet,
@@ -11,7 +12,6 @@ import PageHeader from '../components/PageHeader.jsx'
 import {
   Button,
   ConfirmDialog,
-  EmptyState,
   ErrorState,
   FormField,
   LoadingState,
@@ -175,12 +175,31 @@ export default function WalletsPage() {
       ) : error ? (
         <ErrorState message={error} onRetry={loadWallets} />
       ) : !wallets.length ? (
-        <EmptyState
-          icon={WalletCards}
-          title={status === 'disabled' ? 'Tidak ada dompet nonaktif' : 'Belum ada dompet'}
-          description="Tambahkan dompet untuk memisahkan sumber dan lokasi kas usaha."
-          action={status !== 'disabled' && <Button size="sm" onClick={() => setFormState({ mode: 'create' })}>Tambah dompet</Button>}
-        />
+        <section className="flex flex-col items-center gap-6 rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-8 text-center shadow-sm sm:flex-row sm:justify-center sm:gap-10 sm:px-10 sm:py-10 sm:text-left">
+          <img
+            src={walletIllustration}
+            alt="Ilustrasi dompet dan pertumbuhan kas"
+            className="h-44 w-52 shrink-0 object-contain sm:h-48 sm:w-56"
+            width="520"
+            height="479"
+          />
+          <div className="max-w-md">
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 sm:mx-0">
+              <WalletCards className="h-5 w-5" />
+            </div>
+            <h2 className="text-lg font-extrabold text-slate-900">
+              {status === 'disabled' ? 'Tidak ada dompet nonaktif' : 'Belum ada dompet'}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Tambahkan dompet untuk memisahkan sumber dan lokasi kas usaha.
+            </p>
+            {status !== 'disabled' && (
+              <Button size="sm" className="mt-5" onClick={() => setFormState({ mode: 'create' })}>
+                <Plus className="h-4 w-4" /> Tambah dompet
+              </Button>
+            )}
+          </div>
+        </section>
       ) : (
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {wallets.map((wallet) => {

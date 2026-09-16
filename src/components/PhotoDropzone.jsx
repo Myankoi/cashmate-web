@@ -140,7 +140,7 @@ export default function PhotoDropzone({
         </span>
       </button>
 
-      {(error || items.length) && (
+      {(Boolean(error) || items.length > 0) && (
         <div>
           {error && <p className="mb-2 text-xs font-medium text-rose-600">{error}</p>}
           {Boolean(items.length) && (

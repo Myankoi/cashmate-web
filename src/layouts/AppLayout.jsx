@@ -5,6 +5,8 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   PlusCircle,
   Tags,
   UserRound,
@@ -13,11 +15,13 @@ import {
   X,
 } from 'lucide-react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import walletIllustration from '../assets/figma/wallet-illustration.png'
 import Brand from '../components/Brand.jsx'
 import { useAuth } from '../hooks/useAuth.js'
 import { assetUrl } from '../utils/assetUrl.js'
 import { classNames } from '../utils/classNames.js'
 import { initials } from '../utils/formatters.js'
+import { ConfirmDialog } from '../components/ui.jsx'
 
 const navigation = [
   { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
@@ -30,7 +34,7 @@ const navigation = [
   { label: 'Profil', to: '/profile', icon: UserRound },
 ]
 
-function Sidebar({ open, onClose, onLogout, loggingOut }) {
+function Sidebar({ open, onClose, onLogout, loggingOut, collapsed, onToggle }) {
   return (
     <>
       {open && (
@@ -43,12 +47,29 @@ function Sidebar({ open, onClose, onLogout, loggingOut }) {
       )}
       <aside
         className={classNames(
-          'fixed inset-y-0 left-0 z-50 flex w-[250px] flex-col overflow-hidden bg-gradient-to-b from-[#0c46df] to-[#0734b8] text-white shadow-2xl shadow-brand-900/25 transition-transform duration-200 lg:translate-x-0 lg:shadow-none',
+          'fixed inset-y-0 left-0 z-50 flex flex-col overflow-hidden bg-gradient-to-b from-[#0c46df] to-[#0734b8] text-white shadow-2xl shadow-brand-900/25 transition-[transform,width] duration-200 lg:translate-x-0 lg:shadow-none',
+          collapsed ? 'w-[250px] lg:w-[76px]' : 'w-[250px]',
           open ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="flex h-20 items-center justify-between px-6">
-          <Brand inverse />
+        <div
+          className={classNames(
+            'flex h-20 items-center',
+            collapsed
+              ? 'justify-start gap-0 px-0 lg:h-28 lg:flex-col lg:justify-center lg:gap-1'
+              : 'justify-between px-6',
+          )}
+        >
+          <Brand inverse compact={collapsed} />
+          <button
+            type="button"
+            className="hidden rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white lg:inline-flex"
+            onClick={onToggle}
+            aria-label={collapsed ? 'Perluas navigasi' : 'Perkecil navigasi'}
+            title={collapsed ? 'Perluas navigasi' : 'Perkecil navigasi'}
+          >
+            {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </button>
           <button
             type="button"
             className="rounded-lg p-2 text-white/70 hover:bg-white/10 hover:text-white lg:hidden"
@@ -59,12 +80,12 @@ function Sidebar({ open, onClose, onLogout, loggingOut }) {
           </button>
         </div>
 
-        <div className="px-5 pt-4">
+        <div className={classNames('px-5 pt-4', collapsed && 'hidden')}>
           <p className="px-3 text-[10px] font-extrabold tracking-[0.18em] text-blue-200 uppercase">
             Navigasi utama
           </p>
         </div>
-        <nav className="app-scrollbar mt-3 flex-1 space-y-1 overflow-y-auto px-4">
+        <nav className={classNames('app-scrollbar mt-3 flex-1 space-y-1 overflow-y-auto', collapsed ? 'px-2' : 'px-4')}>
           {navigation.map((item) => {
             const Icon = item.icon
             return (
@@ -75,29 +96,50 @@ function Sidebar({ open, onClose, onLogout, loggingOut }) {
                 onClick={onClose}
                 className={({ isActive }) =>
                   classNames(
-                    'flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition',
+                    'flex min-h-11 items-center rounded-xl text-sm font-semibold transition',
+                    collapsed ? 'justify-center px-0' : 'gap-3 px-3',
                     isActive
                       ? 'bg-white/18 text-white shadow-sm ring-1 ring-white/10'
                       : 'text-blue-100 hover:bg-white/10 hover:text-white',
                   )
                 }
+                aria-label={collapsed ? item.label : undefined}
+                title={collapsed ? item.label : undefined}
               >
                 <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.9} />
-                {item.label}
+                <span className={classNames(collapsed && 'sr-only')}>{item.label}</span>
               </NavLink>
             )
           })}
         </nav>
+
+        <div className={classNames('px-4 pb-4', collapsed && 'hidden')}>
+          <img
+            src={walletIllustration}
+            alt=""
+            aria-hidden="true"
+            className="mx-auto h-44 w-48 object-contain opacity-90"
+            style={{
+              maskImage: 'linear-gradient(to bottom, black 55%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, black 55%, transparent 100%)',
+            }}
+          />
+        </div>
 
         <div className="border-t border-white/10 p-4">
           <button
             type="button"
             onClick={onLogout}
             disabled={loggingOut}
-            className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-semibold text-blue-100 transition hover:bg-white/10 hover:text-white disabled:opacity-60"
+            className={classNames(
+              'flex min-h-11 w-full items-center rounded-xl text-sm font-semibold text-blue-100 transition hover:bg-white/10 hover:text-white disabled:opacity-60',
+              collapsed ? 'justify-center px-0' : 'gap-3 px-3',
+            )}
+            aria-label="Keluar"
+            title={collapsed ? 'Keluar' : undefined}
           >
             <LogOut className="h-[18px] w-[18px]" />
-            {loggingOut ? 'Keluar...' : 'Keluar'}
+            <span className={classNames(collapsed && 'sr-only')}>{loggingOut ? 'Keluar...' : 'Keluar'}</span>
           </button>
         </div>
       </aside>
@@ -107,7 +149,9 @@ function Sidebar({ open, onClose, onLogout, loggingOut }) {
 
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false)
   const { user, business, logout } = useAuth()
   const navigate = useNavigate()
 
@@ -126,10 +170,12 @@ export default function AppLayout() {
       <Sidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        onLogout={handleLogout}
+        onLogout={() => setLogoutDialogOpen(true)}
         loggingOut={loggingOut}
+        collapsed={sidebarCollapsed}
+        onToggle={() => setSidebarCollapsed((current) => !current)}
       />
-      <div className="lg:pl-[250px]">
+      <div className={classNames('transition-[padding] duration-200', sidebarCollapsed ? 'lg:pl-[76px]' : 'lg:pl-[250px]')}>
         <header className="sticky top-0 z-30 flex h-18 items-center border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur-md sm:px-6 lg:px-8">
           <button
             type="button"
@@ -145,7 +191,7 @@ export default function AppLayout() {
           </div>
           <Link
             to="/profile"
-            className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-2.5 py-2 shadow-sm transition hover:border-slate-200"
+            className="flex items-center gap-3 rounded-xl px-2.5 py-2 transition hover:bg-slate-50"
           >
             {user?.profile_photo ? (
               <img
@@ -168,6 +214,15 @@ export default function AppLayout() {
           <Outlet />
         </main>
       </div>
+      <ConfirmDialog
+        open={logoutDialogOpen}
+        title="Keluar dari CashMate?"
+        description="Sesi Anda akan diakhiri dan Anda perlu login kembali untuk mengakses data usaha."
+        confirmLabel="Ya, keluar"
+        onConfirm={handleLogout}
+        onClose={() => setLogoutDialogOpen(false)}
+        loading={loggingOut}
+      />
     </div>
   )
 }

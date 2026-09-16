@@ -11,6 +11,8 @@ import {
 import { Link } from "react-router-dom";
 import { getDashboardSummary } from "../api/dashboard.js";
 import { getMonthlyReport } from "../api/reports.js";
+import { getAllTransactions } from "../api/transactions.js";
+import CategoryPieChart from "../components/CategoryPieChart.jsx";
 import MonthlyChart from "../components/MonthlyChart.jsx";
 import PageHeader from "../components/PageHeader.jsx";
 import TransactionRow from "../components/TransactionRow.jsx";
@@ -73,10 +75,13 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [summary, setSummary] = useState(null);
   const [report, setReport] = useState(null);
+  const [categoryTransactions, setCategoryTransactions] = useState([]);
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [reportLoading, setReportLoading] = useState(true);
+  const [categoryLoading, setCategoryLoading] = useState(true);
   const [summaryError, setSummaryError] = useState("");
   const [reportError, setReportError] = useState("");
+  const [categoryError, setCategoryError] = useState("");
   const summaryRequestVersion = useRef(0);
   const reportRequestVersion = useRef(0);
   const year = Number(todayInJakarta().slice(0, 4));
@@ -117,10 +122,28 @@ export default function DashboardPage() {
     }
   }, [year]);
 
+  const loadCategoryTransactions = useCallback(async () => {
+    setCategoryLoading(true);
+    setCategoryError("");
+    try {
+      const transactions = await getAllTransactions({
+        status: "active",
+        from_date: `${year}-01-01`,
+        to_date: `${year}-12-31`,
+      });
+      setCategoryTransactions(transactions);
+    } catch (requestError) {
+      setCategoryError(requestError.message);
+    } finally {
+      setCategoryLoading(false);
+    }
+  }, [year]);
+
   const loadDashboard = useCallback(() => {
     void loadSummary();
     void loadReport();
-  }, [loadReport, loadSummary]);
+    void loadCategoryTransactions();
+  }, [loadCategoryTransactions, loadReport, loadSummary]);
 
   useEffect(() => {
     const timeout = window.setTimeout(loadDashboard, 0);
@@ -180,7 +203,7 @@ export default function DashboardPage() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex h-full min-w-0 flex-col rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
           <div className="mb-6 flex items-center justify-between gap-4">
             <div>
               <h2 className="font-extrabold text-slate-900">Grafik Keuangan</h2>
@@ -198,7 +221,7 @@ export default function DashboardPage() {
           ) : reportError && report === null ? (
             <ErrorState message={reportError} onRetry={loadReport} />
           ) : report !== null ? (
-            <MonthlyChart data={report} />
+            <MonthlyChart data={report} fillHeight className="min-h-0 flex-1" />
           ) : null}
         </div>
 
@@ -241,6 +264,19 @@ export default function DashboardPage() {
             )
           ) : null}
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
+        <div className="mb-6">
+          <h2 className="font-extrabold text-slate-900">Rekap Kategori</h2>
+          <p className="mt-1 text-xs text-slate-400">Distribusi transaksi aktif sepanjang {year}</p>
+        </div>
+        <CategoryPieChart
+          transactions={categoryTransactions}
+          loading={categoryLoading}
+          error={categoryError}
+          onRetry={loadCategoryTransactions}
+        />
       </section>
     </div>
   );

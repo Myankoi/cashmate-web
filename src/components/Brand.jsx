@@ -1,10 +1,16 @@
 import logo from '../assets/figma/cashmate-logo.png'
 
 export default function Brand({ compact = false, inverse = false }) {
+  const iconSurface = compact && inverse
+    ? 'bg-transparent'
+    : inverse
+      ? 'bg-white/12'
+      : 'bg-white shadow-sm ring-1 ring-slate-100'
+
   return (
     <div className="flex items-center gap-2.5" aria-label="CashMate">
       <span
-        className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl ${inverse ? 'bg-white/12' : 'bg-white shadow-sm ring-1 ring-slate-100'}`}
+        className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl ${iconSurface}`}
       >
         <img src={logo} alt="" className="h-7 w-7" width="28" height="28" />
       </span>
