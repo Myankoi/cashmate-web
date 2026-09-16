@@ -202,8 +202,8 @@ export default function DashboardPage() {
         ) : null}
       </section>
 
-      <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="flex h-full min-w-0 flex-col rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
           <div className="mb-6 flex items-center justify-between gap-4">
             <div>
               <h2 className="font-extrabold text-slate-900">Grafik Keuangan</h2>
@@ -221,7 +221,7 @@ export default function DashboardPage() {
           ) : reportError && report === null ? (
             <ErrorState message={reportError} onRetry={loadReport} />
           ) : report !== null ? (
-            <MonthlyChart data={report} />
+            <MonthlyChart data={report} fillHeight className="min-h-0 flex-1" />
           ) : null}
         </div>
 

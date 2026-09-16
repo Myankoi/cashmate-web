@@ -1,4 +1,5 @@
 import { formatCompact, monthNames } from '../utils/formatters.js'
+import { classNames } from '../utils/classNames.js'
 
 const chartWidth = 760
 const chartHeight = 280
@@ -38,7 +39,7 @@ function areaPath(points, baseline) {
   return `${smoothPath(points)} L ${points.at(-1).x} ${baseline} L ${points[0].x} ${baseline} Z`
 }
 
-export default function MonthlyChart({ data = [], height = 220 }) {
+export default function MonthlyChart({ data = [], height = 220, fillHeight = false, className }) {
   const values = data.flatMap((item) => [Number(item.income) || 0, Number(item.expense) || 0])
   const maxValue = Math.max(...values, 1)
   const chartMax = Math.max(10_000_000, Math.ceil(maxValue / 2_500_000) * 2_500_000)
@@ -47,7 +48,7 @@ export default function MonthlyChart({ data = [], height = 220 }) {
   const expensePoints = createPoints(data, 'expense', chartMax)
 
   return (
-    <div>
+    <div className={classNames(fillHeight && 'flex h-full min-h-[260px] min-w-0 flex-col', className)}>
       <div className="mb-5 flex flex-wrap items-center gap-5 text-xs font-semibold text-slate-500">
         <span className="flex items-center gap-2">
           <i className="h-2.5 w-2.5 rounded-full bg-brand-600" /> Pemasukan
@@ -56,14 +57,14 @@ export default function MonthlyChart({ data = [], height = 220 }) {
           <i className="h-2.5 w-2.5 rounded-full bg-sun-500" /> Pengeluaran
         </span>
       </div>
-      <div className="app-scrollbar overflow-x-auto pb-2">
-        <div className="w-full min-w-[620px]">
+      <div className={classNames('app-scrollbar overflow-x-auto pb-2', fillHeight && 'min-h-0 flex-1')}>
+        <div className={classNames('w-full min-w-[620px]', fillHeight && 'h-full')}>
           <svg
             viewBox={`0 0 ${chartWidth} ${chartHeight}`}
             role="img"
             aria-label="Grafik pemasukan dan pengeluaran bulanan"
-            className="block w-full"
-            style={{ height }}
+            className={classNames('block w-full', fillHeight && 'h-full')}
+            style={fillHeight ? undefined : { height }}
           >
             {Array.from({ length: gridLineCount + 1 }, (_, index) => {
               const value = chartMax - (chartMax / gridLineCount) * index
