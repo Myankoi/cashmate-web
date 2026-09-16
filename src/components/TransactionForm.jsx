@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react'
-import { ArrowDownLeft, ArrowUpRight, CalendarDays } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, CalendarDays, Trash2, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { classNames } from '../utils/classNames.js'
+import { assetUrl } from '../utils/assetUrl.js'
 import {
   formatRupiahInput,
   parseRupiahInput,
   todayInJakarta,
 } from '../utils/formatters.js'
+import PhotoDropzone from './PhotoDropzone.jsx'
 import { Button, FormField, SelectInput, TextArea, TextInput } from './ui.jsx'
 
 const emptyForm = {
@@ -41,8 +43,12 @@ export default function TransactionForm({
 }) {
   const [form, setForm] = useState(() => initialFormValue(initialValue, defaultType))
   const [amountInput, setAmountInput] = useState(() => formatRupiahInput(initialValue?.amount ?? ''))
+  const [photoFiles, setPhotoFiles] = useState([])
+  const [removedPhotoIds, setRemovedPhotoIds] = useState([])
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  const existingPhotos = initialValue?.photos || []
 
   const availableCategories = useMemo(
     () => categories.filter((category) => category.type === form.type),
@@ -77,6 +83,16 @@ export default function TransactionForm({
     if (typeof value === 'number') setAmountInput(formatRupiahInput(value))
   }
 
+  function removeExistingPhoto(photoId) {
+    setRemovedPhotoIds((current) =>
+      current.includes(photoId) ? current : [...current, photoId],
+    )
+  }
+
+  function restoreExistingPhoto(photoId) {
+    setRemovedPhotoIds((current) => current.filter((id) => id !== photoId))
+  }
+
   async function handleSubmit(event) {
     event.preventDefault()
     setError('')
@@ -89,16 +105,19 @@ export default function TransactionForm({
       setError('Dompet, kategori, dan tanggal transaksi wajib dipilih.')
       return
     }
+    const payload = {
+      wallet_id: Number(form.wallet_id),
+      category_id: Number(form.category_id),
+      amount,
+      type: form.type,
+      description: form.description.trim(),
+      date: form.date,
+    }
+    if (photoFiles.length) payload.photos = photoFiles
+    if (removedPhotoIds.length) payload.remove_photos = removedPhotoIds
     setSubmitting(true)
     try {
-      await onSubmit({
-        wallet_id: Number(form.wallet_id),
-        category_id: Number(form.category_id),
-        amount,
-        type: form.type,
-        description: form.description.trim(),
-        date: form.date,
-      })
+      await onSubmit(payload)
     } catch (requestError) {
       setError(requestError.message)
     } finally {
@@ -204,6 +223,64 @@ export default function TransactionForm({
           value={form.description}
           onChange={updateField}
         />
+      </FormField>
+
+      <FormField label="Unggah Bukti Transaksi / Struk" optional>
+        <PhotoDropzone onFilesChange={setPhotoFiles} />
+
+        {existingPhotos.length > 0 && (
+          <div className="mt-4">
+            <p className="mb-2 text-xs font-bold text-slate-700">
+              Foto tersimpan
+            </p>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+              {existingPhotos.map((photo) => {
+                const pendingRemoval = removedPhotoIds.includes(photo.id)
+                return (
+                  <div
+                    key={photo.id}
+                    className={classNames(
+                      'group relative aspect-square overflow-hidden rounded-xl border bg-slate-100 transition',
+                      pendingRemoval ? 'border-rose-200 opacity-60' : 'border-slate-200',
+                    )}
+                  >
+                    <img
+                      src={assetUrl(photo.url)}
+                      alt="Foto bukti transaksi"
+                      className="h-full w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        pendingRemoval
+                          ? restoreExistingPhoto(photo.id)
+                          : removeExistingPhoto(photo.id)
+                      }
+                      className={classNames(
+                        'absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full text-white shadow-sm transition',
+                        pendingRemoval
+                          ? 'bg-emerald-600 hover:bg-emerald-700'
+                          : 'bg-slate-900/70 hover:bg-rose-600',
+                      )}
+                      aria-label={pendingRemoval ? 'Batalkan penghapusan foto' : 'Hapus foto ini'}
+                    >
+                      {pendingRemoval ? <span className="text-[10px] font-extrabold">OK</span> : <Trash2 className="h-3.5 w-3.5" />}
+                    </button>
+                    {pendingRemoval && (
+                      <span className="absolute right-1 bottom-1 left-1 rounded-md bg-rose-600 px-1 py-0.5 text-center text-[10px] font-extrabold text-white">
+                        Akan dihapus
+                      </span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+            <p className="mt-2 text-xs text-slate-400">
+              <X className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />
+              Foto yang ditandai akan dihapus setelah transaksi disimpan.
+            </p>
+          </div>
+        )}
       </FormField>
 
       <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">

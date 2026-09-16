@@ -138,6 +138,10 @@ export function AuthProvider({ children }) {
 
   const resetForbidden = useCallback(() => setGuest(), [setGuest]);
 
+  const updateUser = useCallback((patch) => {
+    setUser((current) => (current ? { ...current, ...patch } : current));
+  }, []);
+
   const retryBootstrap = useCallback(() => {
     setBootstrapError("");
     setStatus("loading");
@@ -153,6 +157,7 @@ export function AuthProvider({ children }) {
       register,
       logout,
       resetForbidden,
+      updateUser,
       authError: bootstrapError,
       retryBootstrap,
     }),
@@ -164,6 +169,7 @@ export function AuthProvider({ children }) {
       register,
       logout,
       resetForbidden,
+      updateUser,
       bootstrapError,
       retryBootstrap,
     ],

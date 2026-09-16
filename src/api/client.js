@@ -71,13 +71,19 @@ export function normalizeApiError(error) {
   if (error?.status !== undefined && !error?.isAxiosError) {
     return error;
   }
+  const responseStatus = error.response?.status;
+  const responseMessage = error.response?.data?.message;
   const normalized = new Error(
-    error.response?.data?.message ||
-      (error.code === "ECONNABORTED"
-        ? "Permintaan terlalu lama. Coba lagi."
-        : "Tidak dapat terhubung ke server."),
+    responseMessage ||
+      (responseStatus === 413
+        ? "Ukuran file terlalu besar. Maksimal 5 MB per foto."
+        : responseStatus
+          ? `Server menolak permintaan (HTTP ${responseStatus}).`
+          : error.code === "ECONNABORTED"
+            ? "Permintaan terlalu lama. Coba lagi."
+            : "Tidak dapat terhubung ke server."),
   );
-  normalized.status = error.response?.status || 0;
+  normalized.status = responseStatus || 0;
   normalized.errors = error.response?.data?.errors || null;
   return normalized;
 }
@@ -105,6 +111,13 @@ apiClient.interceptors.request.use((config) => {
   const accessToken = getAccessToken();
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  // Saat body berupa FormData (upload file), serahkan penentuan
+  // Content-Type beserta boundary-nya ke browser/axios sehingga header
+  // default "application/json" tidak merusak payload multipart.
+  if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+    delete config.headers["Content-Type"];
   }
 
   debugLog("request", {

@@ -40,12 +40,14 @@ export default function AuthLayout({ mode, children }) {
               <div className="lg:hidden">
                 <Brand />
               </div>
-              <Link
-                to={isLogin ? '/register' : '/login'}
-                className="flex items-center gap-1 text-xs font-bold text-brand-600 hover:text-brand-700"
-              >
-                {isLogin ? 'Daftar sekarang' : 'Masuk'} <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
+              {!isLogin && (
+                <Link
+                  to="/login"
+                  className="flex items-center gap-1 text-xs font-bold text-brand-600 hover:text-brand-700"
+                >
+                  Masuk <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              )}
             </div>
             <div className="my-auto">{children}</div>
           </section>

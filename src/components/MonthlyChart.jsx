@@ -1,8 +1,50 @@
 import { formatCompact, monthNames } from '../utils/formatters.js'
 
+const chartWidth = 760
+const chartHeight = 280
+const chartPadding = { top: 10, right: 14, bottom: 38, left: 54 }
+const gridLineCount = 4
+
+function createPoints(data, key, maxValue) {
+  const plotWidth = chartWidth - chartPadding.left - chartPadding.right
+  const plotHeight = chartHeight - chartPadding.top - chartPadding.bottom
+  const denominator = Math.max(data.length - 1, 1)
+
+  return data.map((item, index) => {
+    const value = Number(item[key]) || 0
+    return {
+      value,
+      x: chartPadding.left + (index / denominator) * plotWidth,
+      y: chartPadding.top + plotHeight - (value / maxValue) * plotHeight,
+    }
+  })
+}
+
+function smoothPath(points) {
+  if (points.length === 0) return ''
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`
+
+  return points.reduce((path, point, index) => {
+    if (index === 0) return `M ${point.x} ${point.y}`
+
+    const previous = points[index - 1]
+    const midpoint = (previous.x + point.x) / 2
+    return `${path} C ${midpoint} ${previous.y}, ${midpoint} ${point.y}, ${point.x} ${point.y}`
+  }, '')
+}
+
+function areaPath(points, baseline) {
+  if (points.length === 0) return ''
+  return `${smoothPath(points)} L ${points.at(-1).x} ${baseline} L ${points[0].x} ${baseline} Z`
+}
+
 export default function MonthlyChart({ data = [], height = 220 }) {
   const values = data.flatMap((item) => [Number(item.income) || 0, Number(item.expense) || 0])
   const maxValue = Math.max(...values, 1)
+  const chartMax = Math.max(10_000_000, Math.ceil(maxValue / 2_500_000) * 2_500_000)
+  const plotBottom = chartHeight - chartPadding.bottom
+  const incomePoints = createPoints(data, 'income', chartMax)
+  const expensePoints = createPoints(data, 'expense', chartMax)
 
   return (
     <div>
@@ -16,36 +58,85 @@ export default function MonthlyChart({ data = [], height = 220 }) {
       </div>
       <div className="app-scrollbar overflow-x-auto pb-2">
         <div className="min-w-[620px]">
-          <div
-            className="relative flex items-end justify-around gap-3 border-b border-slate-200 bg-[linear-gradient(to_bottom,transparent_24%,#f1f5f9_25%,transparent_26%,transparent_49%,#f1f5f9_50%,transparent_51%,transparent_74%,#f1f5f9_75%,transparent_76%)] px-3"
+          <svg
+            viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+            role="img"
+            aria-label="Grafik pemasukan dan pengeluaran bulanan"
+            className="block w-full"
             style={{ height }}
           >
-            {data.map((item, index) => {
-              const incomeHeight = (Number(item.income) / maxValue) * (height - 22)
-              const expenseHeight = (Number(item.expense) / maxValue) * (height - 22)
+            {Array.from({ length: gridLineCount + 1 }, (_, index) => {
+              const value = chartMax - (chartMax / gridLineCount) * index
+              const y = chartPadding.top + ((chartMax - value) / chartMax) * (plotBottom - chartPadding.top)
               return (
-                <div key={item.month} className="flex h-full flex-1 items-end justify-center gap-1.5">
-                  <div
-                    className="group relative w-3.5 rounded-t-md bg-brand-600 transition hover:bg-brand-700"
-                    style={{ height: item.income ? Math.max(incomeHeight, 3) : 0 }}
-                    title={`Pemasukan ${monthNames[index]}: ${formatCompact(item.income)}`}
+                <g key={value}>
+                  <line
+                    x1={chartPadding.left}
+                    x2={chartWidth - chartPadding.right}
+                    y1={y}
+                    y2={y}
+                    stroke="#e7edf5"
+                    strokeWidth="1"
                   />
-                  <div
-                    className="group relative w-3.5 rounded-t-md bg-sun-500 transition hover:bg-amber-600"
-                    style={{ height: item.expense ? Math.max(expenseHeight, 3) : 0 }}
-                    title={`Pengeluaran ${monthNames[index]}: ${formatCompact(item.expense)}`}
-                  />
-                </div>
+                  <text
+                    x={chartPadding.left - 12}
+                    y={y + 4}
+                    textAnchor="end"
+                    className="fill-slate-400 text-[11px] font-medium"
+                  >
+                    {formatCompact(value)}
+                  </text>
+                </g>
               )
             })}
-          </div>
-          <div className="flex justify-around px-3 pt-3">
-            {data.map((item, index) => (
-              <span key={item.month} className="flex-1 text-center text-[10px] font-semibold text-slate-400">
-                {monthNames[index]}
-              </span>
+
+            <path d={areaPath(incomePoints, plotBottom)} fill="#2563eb" fillOpacity="0.1" />
+            <path d={areaPath(expensePoints, plotBottom)} fill="#fbbf24" fillOpacity="0.12" />
+            <path d={smoothPath(incomePoints)} fill="none" stroke="#2563eb" strokeLinecap="round" strokeWidth="3" />
+            <path d={smoothPath(expensePoints)} fill="none" stroke="#fbbf24" strokeLinecap="round" strokeWidth="3" />
+
+            {incomePoints.map((point, index) => (
+              <circle
+                key={`income-${data[index].month}`}
+                cx={point.x}
+                cy={point.y}
+                r="3.5"
+                fill="white"
+                stroke="#2563eb"
+                strokeWidth="2.5"
+              >
+                <title>{`Pemasukan ${monthNames[index]}: ${formatCompact(point.value)}`}</title>
+              </circle>
             ))}
-          </div>
+            {expensePoints.map((point, index) => (
+              <circle
+                key={`expense-${data[index].month}`}
+                cx={point.x}
+                cy={point.y}
+                r="3.5"
+                fill="white"
+                stroke="#fbbf24"
+                strokeWidth="2.5"
+              >
+                <title>{`Pengeluaran ${monthNames[index]}: ${formatCompact(point.value)}`}</title>
+              </circle>
+            ))}
+
+            {data.map((item, index) => {
+              const point = incomePoints[index] || expensePoints[index]
+              return (
+                <text
+                  key={item.month}
+                  x={point?.x ?? chartPadding.left}
+                  y={chartHeight - 10}
+                  textAnchor="middle"
+                  className="fill-slate-400 text-[11px] font-semibold"
+                >
+                  {monthNames[index]}
+                </text>
+              )
+            })}
+          </svg>
         </div>
       </div>
     </div>
