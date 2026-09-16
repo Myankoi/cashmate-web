@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowDownRight, ArrowUpRight, CalendarDays, CircleDollarSign, FileBarChart2 } from 'lucide-react'
 import { getMonthlyReport } from '../api/reports.js'
 import MonthlyChart from '../components/MonthlyChart.jsx'
@@ -34,21 +34,28 @@ export default function ReportsPage() {
   const [report, setReport] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const requestVersion = useRef(0)
 
   const loadReport = useCallback(async () => {
+    const requestVersionAtStart = ++requestVersion.current
     if (!Number.isInteger(Number(year)) || Number(year) < 1 || Number(year) > 9999) {
-      setError('Tahun harus berada antara 1 dan 9999.')
-      setLoading(false)
+      if (requestVersionAtStart === requestVersion.current) {
+        setError('Tahun harus berada antara 1 dan 9999.')
+        setLoading(false)
+      }
       return
     }
     setLoading(true)
     setError('')
     try {
-      setReport(await getMonthlyReport(Number(year)))
+      const data = await getMonthlyReport(Number(year))
+      if (requestVersionAtStart !== requestVersion.current) return
+      setReport(data)
     } catch (requestError) {
+      if (requestVersionAtStart !== requestVersion.current) return
       setError(requestError.message)
     } finally {
-      setLoading(false)
+      if (requestVersionAtStart === requestVersion.current) setLoading(false)
     }
   }, [year])
 

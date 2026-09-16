@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ArrowDownLeft, ArrowUpRight, CalendarDays } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { classNames } from '../utils/classNames.js'
 import {
   formatRupiahInput,
@@ -17,8 +18,8 @@ const emptyForm = {
   description: '',
 }
 
-function initialFormValue(initialValue) {
-  if (!initialValue) return emptyForm
+function initialFormValue(initialValue, defaultType) {
+  if (!initialValue) return { ...emptyForm, type: defaultType }
   return {
     type: initialValue.type,
     amount: initialValue.amount,
@@ -36,8 +37,10 @@ export default function TransactionForm({
   onSubmit,
   onCancel,
   submitLabel = 'Simpan Transaksi',
+  defaultType = 'income',
 }) {
-  const [form, setForm] = useState(() => initialFormValue(initialValue))
+  const [form, setForm] = useState(() => initialFormValue(initialValue, defaultType))
+  const [amountInput, setAmountInput] = useState(() => formatRupiahInput(initialValue?.amount ?? ''))
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -58,19 +61,31 @@ export default function TransactionForm({
   }
 
   function updateAmount(event) {
-    const value = parseRupiahInput(event.target.value)
-    setForm((current) => ({ ...current, amount: value }))
+    const rawValue = event.target.value
+    const value = parseRupiahInput(rawValue)
+    setAmountInput(rawValue)
+    setForm((current) => ({ ...current, amount: value === null ? '' : value }))
+    if (value === null && rawValue.trim()) {
+      setError('Nominal hanya boleh berisi angka rupiah bulat, tanpa desimal atau minus.')
+      return
+    }
     setError('')
+  }
+
+  function formatAmountOnBlur() {
+    const value = parseRupiahInput(amountInput)
+    if (typeof value === 'number') setAmountInput(formatRupiahInput(value))
   }
 
   async function handleSubmit(event) {
     event.preventDefault()
     setError('')
-    if (!Number.isSafeInteger(Number(form.amount)) || Number(form.amount) <= 0) {
+    const amount = parseRupiahInput(amountInput)
+    if (!Number.isSafeInteger(amount) || amount <= 0) {
       setError('Nominal harus berupa rupiah bulat dan lebih dari 0.')
       return
     }
-    if (!form.wallet_id || !form.category_id || !form.date) {
+    if (!form.wallet_id || !form.category_id || !form.date || !availableCategories.length) {
       setError('Dompet, kategori, dan tanggal transaksi wajib dipilih.')
       return
     }
@@ -79,7 +94,7 @@ export default function TransactionForm({
       await onSubmit({
         wallet_id: Number(form.wallet_id),
         category_id: Number(form.category_id),
-        amount: Number(form.amount),
+        amount,
         type: form.type,
         description: form.description.trim(),
         date: form.date,
@@ -132,8 +147,9 @@ export default function TransactionForm({
             name="amount"
             inputMode="numeric"
             placeholder="0"
-            value={formatRupiahInput(form.amount)}
+            value={amountInput}
             onChange={updateAmount}
+            onBlur={formatAmountOnBlur}
             className="pl-11 text-base font-extrabold"
           />
         </div>
@@ -163,6 +179,15 @@ export default function TransactionForm({
         </FormField>
       </div>
 
+      {!availableCategories.length && (
+        <p className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+          Belum ada kategori untuk transaksi ini.{' '}
+          <Link to="/categories" className="font-extrabold underline underline-offset-2">
+            Kelola kategori
+          </Link>
+        </p>
+      )}
+
       <FormField label="Tanggal Transaksi" htmlFor="date" required>
         <div className="relative">
           <CalendarDays className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -187,7 +212,12 @@ export default function TransactionForm({
             Batal
           </Button>
         )}
-        <Button type="submit" loading={submitting} className="sm:min-w-44">
+        <Button
+          type="submit"
+          loading={submitting}
+          disabled={!availableCategories.length}
+          className="sm:min-w-44"
+        >
           {submitLabel}
         </Button>
       </div>

@@ -53,10 +53,12 @@ export function todayInJakarta() {
 }
 
 export function parseRupiahInput(value) {
-  const digits = String(value).replace(/\D/g, '')
-  if (!digits) return ''
+  const input = String(value).trim()
+  if (!input) return ''
+  if (!/^\d+$/.test(input) && !/^\d{1,3}(?:\.\d{3})+$/.test(input)) return null
+  const digits = input.replaceAll('.', '')
   const amount = Number(digits)
-  if (!Number.isSafeInteger(amount)) return ''
+  if (!Number.isSafeInteger(amount)) return null
   return amount
 }
 

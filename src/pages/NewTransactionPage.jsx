@@ -45,9 +45,10 @@ export default function NewTransactionPage() {
     navigate('/transactions')
   }
 
-  const hasBothCategoryTypes =
-    categories.some((category) => category.type === 'income') &&
-    categories.some((category) => category.type === 'expense')
+  const hasTransactionCategory = categories.some(
+    (category) => category.type === 'income' || category.type === 'expense',
+  )
+  const defaultType = categories.some((category) => category.type === 'income') ? 'income' : 'expense'
 
   return (
     <div className="space-y-6">
@@ -68,14 +69,19 @@ export default function NewTransactionPage() {
           <LoadingState rows={5} />
         ) : error ? (
           <ErrorState message={error} onRetry={loadOptions} />
-        ) : !wallets.length || !hasBothCategoryTypes ? (
+        ) : !wallets.length || !hasTransactionCategory ? (
           <EmptyState
             icon={Info}
             title="Data transaksi belum siap"
-            description="Buat minimal satu dompet serta kategori pemasukan dan pengeluaran sebelum mencatat transaksi."
+            description="Buat minimal satu dompet serta kategori pemasukan atau pengeluaran sebelum mencatat transaksi."
           />
         ) : (
-          <TransactionForm wallets={wallets} categories={categories} onSubmit={handleSubmit} />
+          <TransactionForm
+            wallets={wallets}
+            categories={categories}
+            defaultType={defaultType}
+            onSubmit={handleSubmit}
+          />
         )}
       </section>
     </div>

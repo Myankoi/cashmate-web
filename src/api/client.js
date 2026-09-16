@@ -86,6 +86,11 @@ function notifySessionExpired() {
   window.dispatchEvent(new CustomEvent("cashmate:session-expired"));
 }
 
+function expireSession() {
+  clearTokens();
+  notifySessionExpired();
+}
+
 apiClient.interceptors.request.use((config) => {
   if (!configuredBaseURL) {
     return Promise.reject(configurationError());
@@ -179,8 +184,7 @@ apiClient.interceptors.response.use(
               hasResponse: Boolean(refreshError.response),
               response: responseSummary(refreshError.response?.data),
             });
-            clearTokens();
-            notifySessionExpired();
+            expireSession();
             throw normalizeApiError(refreshError);
           })
           .finally(() => {
@@ -196,6 +200,18 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         return Promise.reject(refreshError);
       }
+    }
+
+    if (
+      isUnauthorized &&
+      !originalRequest.skipAuthRefresh &&
+      (originalRequest._retry || getAccessToken())
+    ) {
+      debugLog("session:expired", {
+        requestId: debug?.requestId,
+        retried: Boolean(originalRequest._retry),
+      });
+      expireSession();
     }
 
     return Promise.reject(normalizeApiError(error));
