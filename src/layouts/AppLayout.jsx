@@ -55,7 +55,9 @@ function Sidebar({ open, onClose, onLogout, loggingOut, collapsed, onToggle }) {
         <div
           className={classNames(
             'flex h-20 items-center',
-            collapsed ? 'justify-start gap-0 px-0' : 'justify-between px-6',
+            collapsed
+              ? 'justify-start gap-0 px-0 lg:h-28 lg:flex-col lg:justify-center lg:gap-1'
+              : 'justify-between px-6',
           )}
         >
           <Brand inverse compact={collapsed} />
