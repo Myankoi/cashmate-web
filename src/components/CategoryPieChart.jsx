@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useState } from 'react'
 import { EmptyState, ErrorState, LoadingState } from './ui.jsx'
 import { formatCompact, formatIDR } from '../utils/formatters.js'
 
@@ -20,8 +21,10 @@ function categorySummary(transactions) {
 }
 
 export default function CategoryPieChart({ transactions = [], loading = false, error = '', onRetry }) {
+  const [hoveredIndex, setHoveredIndex] = useState(null)
   const categories = useMemo(() => categorySummary(transactions), [transactions])
   const total = categories.reduce((sum, category) => sum + category.amount, 0)
+  const hoveredCategory = hoveredIndex === null ? null : categories[hoveredIndex]
 
   if (loading && !transactions.length) return <LoadingState rows={3} />
   if (error && !transactions.length) return <ErrorState message={error} onRetry={onRetry} />
@@ -37,6 +40,14 @@ export default function CategoryPieChart({ transactions = [], loading = false, e
   return (
     <div className="grid items-center gap-6 lg:grid-cols-[minmax(220px,280px)_1fr]">
       <div className="relative mx-auto h-60 w-60 max-w-full">
+        {hoveredCategory && (
+          <div className="pointer-events-none absolute top-1 left-1/2 z-10 w-44 -translate-x-1/2 rounded-xl bg-slate-900/95 px-3 py-2.5 text-center text-white shadow-xl">
+            <p className="truncate text-xs font-extrabold">{hoveredCategory.name}</p>
+            <p className="mt-1 text-[11px] font-medium text-slate-300">
+              {formatIDR(hoveredCategory.amount)} · {Math.round((hoveredCategory.amount / total) * 100)}%
+            </p>
+          </div>
+        )}
         <svg
           viewBox="0 0 200 200"
           role="img"
@@ -62,9 +73,14 @@ export default function CategoryPieChart({ transactions = [], loading = false, e
                 strokeDasharray={`${visibleSegment} ${circumference}`}
                 strokeDashoffset={-currentOffset}
                 strokeLinecap="butt"
-              >
-                <title>{`${category.name}: ${formatIDR(category.amount)}`}</title>
-              </circle>
+                tabIndex="0"
+                role="button"
+                aria-label={`Detail kategori ${category.name}`}
+                onMouseEnter={() => setHoveredIndex(index)}
+                onMouseLeave={() => setHoveredIndex(null)}
+                onFocus={() => setHoveredIndex(index)}
+                onBlur={() => setHoveredIndex(null)}
+              />
             )
           })}
         </svg>
