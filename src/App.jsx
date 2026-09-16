@@ -8,6 +8,7 @@ import ForbiddenPage from "./pages/ForbiddenPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import NewTransactionPage from "./pages/NewTransactionPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
+import ProfilePage from "./pages/ProfilePage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import ReportsPage from "./pages/ReportsPage.jsx";
 import StaffPage from "./pages/StaffPage.jsx";
@@ -39,6 +40,7 @@ function App() {
                 <Route path="/categories" element={<CategoriesPage />} />
                 <Route path="/staff" element={<StaffPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
               </Route>
             </Route>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />

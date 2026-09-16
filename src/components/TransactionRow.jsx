@@ -1,11 +1,16 @@
+import { useState } from 'react'
 import { ArrowDownLeft, ArrowUpRight, RotateCcw, SquarePen, Trash2 } from 'lucide-react'
+import { assetUrl } from '../utils/assetUrl.js'
 import { classNames } from '../utils/classNames.js'
 import { formatDate, formatIDR } from '../utils/formatters.js'
+import PhotoLightbox from './PhotoLightbox.jsx'
 import { Button, StatusBadge } from './ui.jsx'
 
 export default function TransactionRow({ transaction, compact = false, onEdit, onVoid, onRestore }) {
   const income = transaction.type === 'income'
   const deleted = Boolean(transaction.deleted_at)
+  const photos = transaction.photos || []
+  const [lightboxIndex, setLightboxIndex] = useState(-1)
 
   return (
     <article
@@ -35,6 +40,36 @@ export default function TransactionRow({ transaction, compact = false, onEdit, o
           {transaction.wallet?.name || 'Dompet tidak tersedia'}
           {transaction.created_by?.name ? ` · ${transaction.created_by.name}` : ''}
         </p>
+        {photos.length > 0 && (
+          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+            {photos.slice(0, 3).map((photo, index) => (
+              <button
+                key={photo.id}
+                type="button"
+                onClick={() => setLightboxIndex(index)}
+                className="focus-ring group relative h-12 w-12 overflow-hidden rounded-lg border border-slate-200 transition hover:border-brand-300"
+                aria-label="Lihat bukti transaksi"
+              >
+                <img
+                  src={assetUrl(photo.url)}
+                  alt="Bukti transaksi"
+                  className="h-full w-full object-cover"
+                />
+                <span className="absolute inset-0 bg-slate-900/0 transition group-hover:bg-slate-900/10" />
+              </button>
+            ))}
+            {photos.length > 3 && (
+              <button
+                type="button"
+                onClick={() => setLightboxIndex(3)}
+                className="flex h-12 w-12 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-xs font-extrabold text-slate-600 transition hover:border-brand-300"
+                aria-label="Lihat semua bukti transaksi"
+              >
+                +{photos.length - 3}
+              </button>
+            )}
+          </div>
+        )}
       </div>
       <div className="flex items-center justify-between gap-4 sm:block sm:text-right">
         <p className={classNames('text-sm font-extrabold', income ? 'text-emerald-600' : 'text-rose-500')}>
@@ -61,6 +96,13 @@ export default function TransactionRow({ transaction, compact = false, onEdit, o
           )}
         </div>
       )}
+
+      <PhotoLightbox
+        key={lightboxIndex}
+        photos={photos}
+        index={lightboxIndex}
+        onClose={() => setLightboxIndex(-1)}
+      />
     </article>
   )
 }

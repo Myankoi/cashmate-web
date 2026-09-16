@@ -8,13 +8,15 @@ import {
   Menu,
   PlusCircle,
   Tags,
+  UserRound,
   Users,
   WalletCards,
   X,
 } from 'lucide-react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import Brand from '../components/Brand.jsx'
 import { useAuth } from '../hooks/useAuth.js'
+import { assetUrl } from '../utils/assetUrl.js'
 import { classNames } from '../utils/classNames.js'
 import { initials } from '../utils/formatters.js'
 
@@ -26,6 +28,7 @@ const navigation = [
   { label: 'Dompet', to: '/wallets', icon: WalletCards },
   { label: 'Kategori', to: '/categories', icon: Tags },
   { label: 'Staff', to: '/staff', icon: Users },
+  { label: 'Profil', to: '/profile', icon: UserRound },
 ]
 
 function Sidebar({ open, onClose, onLogout, loggingOut }) {
@@ -141,16 +144,27 @@ export default function AppLayout() {
             <p className="truncate text-xs font-semibold text-slate-400">Ruang usaha</p>
             <p className="truncate text-sm font-extrabold text-slate-800">{business?.name}</p>
           </div>
-          <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-2.5 py-2 shadow-sm">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-600 text-xs font-extrabold text-white">
-              {initials(user?.name)}
-            </span>
+          <Link
+            to="/profile"
+            className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-2.5 py-2 shadow-sm transition hover:border-slate-200"
+          >
+            {user?.profile_photo ? (
+              <img
+                src={assetUrl(user.profile_photo)}
+                alt="Foto profil"
+                className="h-8 w-8 rounded-full object-cover"
+              />
+            ) : (
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-600 text-xs font-extrabold text-white">
+                {initials(user?.name)}
+              </span>
+            )}
             <div className="hidden min-w-0 sm:block">
               <p className="max-w-40 truncate text-xs font-extrabold text-slate-800">{user?.name}</p>
               <p className="text-[10px] font-semibold text-slate-400">Owner</p>
             </div>
-            <ChevronDown className="hidden h-4 w-4 text-slate-400 sm:block" />
-          </div>
+            <ChevronDown className="hidden h-4 w-4 shrink-0 text-slate-400 sm:block" />
+          </Link>
         </header>
         <main className="mx-auto w-full max-w-[1440px] p-4 sm:p-6 lg:p-8">
           <Outlet />

@@ -107,6 +107,13 @@ apiClient.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
 
+  // Saat body berupa FormData (upload file), serahkan penentuan
+  // Content-Type beserta boundary-nya ke browser/axios sehingga header
+  // default "application/json" tidak merusak payload multipart.
+  if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+    delete config.headers["Content-Type"];
+  }
+
   debugLog("request", {
     requestId,
     method: config.method?.toUpperCase(),
